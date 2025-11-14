@@ -8,7 +8,7 @@ SELECT
   COUNT(*) AS total_flights,
   ROUND(AVG(DEPARTURE_DELAY), 2) AS avg_departure_delay,
   ROUND(AVG(ARRIVAL_DELAY), 2) AS avg_arrival_delay,
-  ROUND(100 * SUM(CANCELLED) / COUNT(*), 2) AS cancellation_rate_pct
+  ROUND(100 * SUM(CANCELLED) / COUNT(*), 4) AS cancellation_rate_pct
 FROM flights
 GROUP BY MONTH
 ORDER BY MONTH;
