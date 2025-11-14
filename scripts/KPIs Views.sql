@@ -529,6 +529,92 @@ ORDER BY revenue_usd DESC;
       GROUP BY years, months
       ORDER BY years, months;
 
+-- _________________________Hassan________________________________
+
+-- New vs. Repeat Customers 
+CREATE VIEW vw_New_vs_Repeat_Performance AS
+    SELECT 
+        CASE
+            WHEN s.is_repeat_session = 0 THEN 'New Customer Session'
+            WHEN s.is_repeat_session = 1 THEN 'Repeat Customer Session'
+        END AS Customer_Type,
+        COUNT(DISTINCT s.website_session_id) AS Total_Sessions,
+        COUNT(DISTINCT o.order_id) AS Total_Orders,
+        SUM(o.price_usd) AS Total_Revenue
+    FROM
+        website_sessions s
+            LEFT JOIN
+        orders o ON s.user_id = o.user_id
+    GROUP BY s.is_repeat_session;
+    
+  --  Repeat Purchase Rate (RPR)
+  CREATE VIEW vw_Repeat_Purchase_Rate AS
+
+WITH UserOrderCounts AS (
+    SELECT
+        user_id,
+        COUNT(order_id) AS order_count
+    FROM
+        orders
+    GROUP BY
+        user_id
+)
+
+SELECT
+    (CAST((SELECT COUNT(*) FROM UserOrderCounts WHERE order_count >= 2) AS REAL) * 100.0)
+    /
+    (SELECT COUNT(DISTINCT user_id) FROM orders) AS RPR_Percentage;
+    
+    --  Customer Lifetime Value (CLV)
+CREATE VIEW vw_New_vs_Repeat_Performance AS
+
+SELECT
+    CASE
+        WHEN s.is_repeat_session = 0 THEN 'New Customer Session'
+        WHEN s.is_repeat_session = 1 THEN 'Repeat Customer Session'
+    END AS Customer_Type,
+    
+    COUNT(DISTINCT s.website_session_id) AS Total_Sessions,
+    
+    COUNT(DISTINCT o.order_id) AS Total_Orders,
+    
+    SUM(o.price_usd) AS Total_Revenue
+FROM
+    website_sessions s
+LEFT JOIN
+    orders o ON s.user_id = o.user_id 
+GROUP BY
+    s.is_repeat_session;
+    
+    --  Loyalty: Days Between Visits
+CREATE VIEW vw_Loyalty_Days_Between_Visits AS
+
+WITH SessionDates AS (
+    SELECT
+        user_id,
+        created_at,
+        LAG(created_at, 1) OVER (PARTITION BY user_id ORDER BY created_at) AS previous_session_date
+    FROM
+        website_sessions
+),
+
+DateDifferences AS (
+    SELECT
+        user_id,
+        DATEDIFF(created_at,previous_session_date) AS days_between_sessions
+    FROM
+        SessionDates
+    WHERE
+        previous_session_date IS NOT NULL
+)
+
+SELECT
+    user_id,
+    AVG(days_between_sessions) AS Avg_Days_Between_Visits
+FROM
+    DateDifferences
+GROUP BY
+    user_id;
 
 -- _________________________Hassan________________________________
 -- Customer Metrics
