@@ -108,23 +108,23 @@ GROUP BY AIRLINE;
 CREATE OR REPLACE VIEW v_avg_dwell_time_per_tail AS
 SELECT
     TAIL_NUMBER,
-    ROUND(AVG(TIMESTAMPDIFF(
-        MINUTE,
-        ARRIVAL_TIME,
-        next_departure
-    )), 2) AS avg_dwell_minutes
+    ROUND(AVG(dwell_minutes), 2) AS avg_dwell_minutes
 FROM (
     SELECT
         TAIL_NUMBER,
-        ARRIVAL_TIME,
-        LEAD(DEPARTURE_TIME) OVER (
-            PARTITION BY TAIL_NUMBER
-            ORDER BY ARRIVAL_TIME
-        ) AS next_departure
+        TIMESTAMPDIFF(
+            MINUTE,
+            ARRIVAL_TIME,
+            LEAD(DEPARTURE_TIME) OVER (
+                PARTITION BY TAIL_NUMBER
+                ORDER BY DEPARTURE_TIME
+            )
+        ) AS dwell_minutes
     FROM flights
-) t
-WHERE next_departure IS NOT NULL
+) AS calc
+WHERE dwell_minutes > 0
 GROUP BY TAIL_NUMBER;
+
 
 -- 12. Average Air Time
 CREATE OR REPLACE VIEW v_avg_air_time AS
