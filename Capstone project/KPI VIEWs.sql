@@ -1,4 +1,4 @@
-USE airlines_db;
+USE airline_db;
 
 -- TOP PRIORITY
 -- 1. Monthly seasonal trend view
@@ -91,7 +91,7 @@ GROUP BY AIRLINE;
 CREATE OR REPLACE VIEW v_avg_taxi_out_time AS
 SELECT 
   AIRLINE,
-  AVG(TAXI_OUT) AS avg_taxi_out
+  ROUND(AVG(TAXI_OUT),2) AS avg_taxi_out
 FROM flights
 GROUP BY AIRLINE;
 
@@ -99,7 +99,7 @@ GROUP BY AIRLINE;
 CREATE OR REPLACE VIEW v_avg_taxi_in_time AS
 SELECT 
   AIRLINE,
-  AVG(TAXI_IN) AS avg_taxi_in
+  ROUND(AVG(TAXI_IN),2) AS avg_taxi_in
 FROM flights
 GROUP BY AIRLINE;
 
@@ -274,12 +274,11 @@ FROM flights
 GROUP BY ORIGIN_AIRPORT;
 
 -- 27. Airport Average Delay & Taxi Times
-CREATE OR REPLACE VIEW v_airport_delay_taxi AS
+CREATE OR REPLACE VIEW v_avg_delay_originAirport AS
 SELECT 
   ORIGIN_AIRPORT,
-  AVG(DEPARTURE_DELAY) AS avg_departure_delay,
-  AVG(TAXI_OUT) AS avg_taxi_out,
-  AVG(TAXI_IN) AS avg_taxi_in
+  ROUND(AVG(DEPARTURE_DELAY),2) AS avg_departure_delay,
+  ROUND(AVG(TAXI_OUT),2) AS avg_taxi_out
 FROM flights
 GROUP BY ORIGIN_AIRPORT;
  
@@ -326,3 +325,18 @@ SELECT
   COUNT(*) AS total_flights
 FROM flights
 GROUP BY time_period;
+
+-- 31. Avg.Delay & Taxi in for Destination airport 
+CREATE OR REPLACE VIEW v_avg_delay_destinationAirport AS
+SELECT 
+  DESTINATION_AIRPORT,
+  ROUND(AVG(DEPARTURE_DELAY),2) AS avg_departure_delay,
+  ROUND(AVG(TAXI_IN),2) AS avg_taxi_in
+FROM flights
+GROUP BY DESTINATION_AIRPORT;
+
+-- 32.AVG.departure for every airline
+CREATE OR REPLACE VIEW v_avg_delay_airline AS 
+SELECT AIRLINE ,ROUND(AVG(DEPARTURE_DELAY),2) avg_delay, ROUND(AVG(TAXI_OUT),2) avg_taxi_out , ROUND(AVG(TAXI_IN),2) avg_taxi_in
+FROM flights 
+GROUP BY AIRLINE;
