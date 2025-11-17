@@ -1,4 +1,3 @@
-USE airline_db;
 
 -- TOP PRIORITY
 -- 1. Monthly seasonal trend view
@@ -131,11 +130,17 @@ GROUP BY TAIL_NUMBER;
 -- 12. Average Air Time
 
 CREATE OR REPLACE VIEW v_avg_air_time AS
-SELECT 
-  AIRLINE,
-  ROUND(AVG(AIR_TIME),2) AS avg_air_time
-FROM flights
-GROUP BY AIRLINE;
+with cte_top_5 as (
+	SELECT 
+	  AIRLINE,
+	  ROUND(AVG(AIR_TIME),2) AS avg_air_time,
+	  row_number() over (order by AVG(AIR_TIME) desc) as rank_top_5
+	FROM flights
+	GROUP BY AIRLINE
+)
+select AIRLINE, avg_air_time
+from cte_top_5
+where rank_top_5 <= 5;
 -- 13. Average Scheduled vs. Actual Elapsed Time Difference
 
 CREATE OR REPLACE VIEW v_avg_scheduled_vs_actual_elapsed_time AS
@@ -232,9 +237,9 @@ SELECT
   AIRLINE,
   COUNT(*) AS total_flightss,
   SUM(CANCELLED) AS cancellations,
-  ROUND(100 * SUM(CANCELLED) / COUNT(*), 2) AS cancellation_rate_pct,
+  SUM(CANCELLED) / COUNT(*) AS cancellation_rate_pct,
   SUM(DIVERTED) AS diversions,
-  ROUND(100 * SUM(DIVERTED) / COUNT(*), 2) AS diversion_rate_pct
+  SUM(DIVERTED) / COUNT(*) AS diversion_rate_pct
 FROM flights
 GROUP BY AIRLINE;
 
@@ -337,3 +342,62 @@ SELECT
   COUNT(*) AS total_flights
 FROM flights
 GROUP BY time_period;
+
+
+
+
+-- ------------------------------------------------Manar------------------------------------------------
+-- Monthly flight trends
+CREATE OR REPLACE VIEW monthly_flight_trends AS
+SELECT 
+    Month, COUNT(*) AS flight_count
+FROM
+    flights
+GROUP BY Month 
+ORDER BY flight_count DESC;
+
+-- Average delay by time period in day
+CREATE OR REPLACE VIEW avg_delay_by_period AS
+SELECT
+  CASE
+    WHEN DEPARTURE_TIME >= 500 AND DEPARTURE_TIME < 1200 THEN 'Morning'
+    WHEN DEPARTURE_TIME >= 1200 AND DEPARTURE_TIME < 1700 THEN 'Afternoon'
+    WHEN DEPARTURE_TIME >= 1700 AND DEPARTURE_TIME < 2100 THEN 'Evening'
+    ELSE 'Night'
+  END AS time_of_day,
+  AVG(DEPARTURE_DELAY) AS avg_departure_delay,
+  AVG(ARRIVAL_DELAY) AS avg_arrival_delay
+FROM flights
+WHERE DEPARTURE_DELAY IS NOT NULL
+GROUP BY time_of_day;
+
+-- Peak flight periods by scheduled departure hour
+CREATE OR REPLACE VIEW peak_periods_by_hour AS
+SELECT
+  FLOOR(SCHEDULED_DEPARTURE / 100) AS departure_hour,
+  COUNT(*) AS num_flights
+FROM flights
+GROUP BY departure_hour
+ORDER BY num_flights DESC;
+
+-- Flight performance by day of the week
+CREATE OR REPLACE VIEW flight_performance_by_day AS
+SELECT
+  CASE DAY_OF_WEEK
+    WHEN 1 THEN 'Monday'
+    WHEN 2 THEN 'Tuesday'
+    WHEN 3 THEN 'Wednesday'
+    WHEN 4 THEN 'Thursday'
+    WHEN 5 THEN 'Friday'
+    WHEN 6 THEN 'Saturday'
+    WHEN 7 THEN 'Sunday'
+    ELSE 'Unknown'
+  END AS day_name,
+  AVG(DEPARTURE_DELAY) AS avg_departure_delay,
+  AVG(ARRIVAL_DELAY) AS avg_arrival_delay,
+  ROUND(SUM(CANCELLED) * 100.0 / COUNT(*), 2) AS cancellation_rate_percent,
+  ROUND(SUM(DIVERTED) * 100.0 / COUNT(*), 2) AS diverted_rate_percent,
+  COUNT(*) AS num_flights
+FROM flights
+GROUP BY day_name
+ORDER BY FIELD(day_name, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday');
