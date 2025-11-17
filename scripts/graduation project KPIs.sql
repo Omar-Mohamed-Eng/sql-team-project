@@ -1,4 +1,4 @@
-
+use airline_flight_delays;
 -- TOP PRIORITY
 -- 1. Monthly seasonal trend view
 CREATE OR REPLACE VIEW v_monthly_seasonal_trend AS
@@ -356,6 +356,42 @@ FROM
 GROUP BY Month 
 ORDER BY flight_count DESC;
 
+-- timeline 
+CREATE OR REPLACE VIEW v_flight_timeline_trend AS
+SELECT
+    -- Convert numeric month to month name
+    CASE Month
+        WHEN 1 THEN 'January'
+        WHEN 2 THEN 'February'
+        WHEN 3 THEN 'March'
+        WHEN 4 THEN 'April'
+        WHEN 5 THEN 'May'
+        WHEN 6 THEN 'June'
+        WHEN 7 THEN 'July'
+        WHEN 8 THEN 'August'
+        WHEN 9 THEN 'September'
+        WHEN 10 THEN 'October'
+        WHEN 11 THEN 'November'
+        WHEN 12 THEN 'December'
+        ELSE 'Unknown'
+    END AS month_name,
+    -- Convert numeric day to day name
+    CASE DAY_OF_WEEK
+        WHEN 1 THEN 'Monday'
+        WHEN 2 THEN 'Tuesday'
+        WHEN 3 THEN 'Wednesday'
+        WHEN 4 THEN 'Thursday'
+        WHEN 5 THEN 'Friday'
+        WHEN 6 THEN 'Saturday'
+        WHEN 7 THEN 'Sunday'
+        ELSE 'Unknown'
+    END AS day_name,
+    FLOOR(SCHEDULED_DEPARTURE / 100) AS departure_hour,
+    COUNT(*) AS flight_count
+FROM flights
+GROUP BY month_name, day_name, departure_hour
+ORDER BY month_name, day_name, departure_hour;
+
 -- Average delay by time period in day
 CREATE OR REPLACE VIEW avg_delay_by_period AS
 SELECT
@@ -371,6 +407,10 @@ FROM flights
 WHERE DEPARTURE_DELAY IS NOT NULL
 GROUP BY time_of_day;
 
+
+
+
+
 -- Peak flight periods by scheduled departure hour
 CREATE OR REPLACE VIEW peak_periods_by_hour AS
 SELECT
@@ -379,6 +419,10 @@ SELECT
 FROM flights
 GROUP BY departure_hour
 ORDER BY num_flights DESC;
+
+
+
+
 
 -- Flight performance by day of the week
 CREATE OR REPLACE VIEW flight_performance_by_day AS
@@ -401,3 +445,4 @@ SELECT
 FROM flights
 GROUP BY day_name
 ORDER BY FIELD(day_name, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday');
+
