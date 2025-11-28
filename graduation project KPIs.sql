@@ -426,3 +426,27 @@ FROM
     airlines
   
 GROUP BY time_period;
+************************HASSAN****************************
+CREATE OR REPLACE VIEW v_airline_summary_hassan AS
+SELECT 
+    f.AIRLINE,
+    COUNT(DISTINCT f.TAIL_NUMBER) AS num_aircraft,
+    COUNT(DISTINCT f.FLIGHT_NUMBER) AS total_flights,
+    ROUND(AVG(d.avg_distance), 2) AS avg_distance,
+    ROUND(AVG(s.avg_elapsed_time_diff), 2) AS avg_elapsed_time_diff,
+    MAX(c.estimated_cost_usd) AS total_estimated_cost_usd
+FROM flights f
+LEFT JOIN v_avg_distance_per_flights d ON f.AIRLINE = d.AIRLINE
+LEFT JOIN v_avg_scheduled_vs_actual_elapsed_time s ON f.AIRLINE = s.AIRLINE
+LEFT JOIN v_delay_cost_estimate c ON f.AIRLINE = c.AIRLINE
+GROUP BY f.AIRLINE;
+****************************************************
+CREATE OR REPLACE VIEW v_avg_dwell_time_per_tail AS
+SELECT 
+    TAIL_NUMBER,
+    ROUND(AVG((WHEELS_OFF - WHEELS_ON) / 60.0), 2) AS avg_dwell_minutes
+FROM flights
+WHERE WHEELS_OFF IS NOT NULL 
+  AND WHEELS_ON IS NOT NULL 
+  AND (WHEELS_OFF - WHEELS_ON) > 0
+GROUP BY TAIL_NUMBER;
