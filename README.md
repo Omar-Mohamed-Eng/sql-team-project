@@ -5,9 +5,10 @@ This project implements the **Gold Layer** of a SQL-based data pipeline, and the
 The Gold Layer provides **clean, aggregated, business-ready data** used for dashboards and business reports.  
 
 ### Objectives  
-- Ensure **data quality & governance**  
-- Create **derived metrics** and **KPI calculations** 
-- Build **fact and dimension tables**  
+- Ensure **data quality**  
+- Create **derived metrics** 
+- Create **VIEWS for KPI calculations, then put them into SP for batch running** 
+- Define **fact and dimension tables**  
 - Power **dashboards & reports** with optimized SQL queries  
 
 ---
@@ -18,20 +19,16 @@ sql-gold-layer/
 │
 ├── README.md               # Project overview, setup, conventions
 ├── scripts/                # All SQL scripts
-│   └── KPIs Views          # Create views for KPIs calculations, CTEs, EDA
+│    ├── KPIs Views.sql     # Create views for KPIs calculations, CTEs, EDA
+│    └── Quality check.sql  # Check NULLs and duplicates for Identity columns & check If there was Leading & Trailing spaces in text columns
 │
-├── reports/                # Research, KPI definitions
 ├── dashboard/              # Excel, Power BI
 │
-├── data/                   # Example input data or synthetic samples
-│   ├── raw/                # Source raw files (SQL Script file for creation)
-│   └── processed/          # Cleansed, joined datasets
-│
 └──  docs/                   # Extended docs (ERD, data dictionary, KPIs)
-│   ├── data-dictionary.md  # Column descriptions, Sample data, Column relationship, analytics notes
-|   ├── Industry Overview.docx 
-|   ├── ERD Model.png       # Modeling data tables and defining the relationships 
-|   ├── KPI mapping.xlsx    # Show how to calculate or apply KPIs on the dataset   
+    ├── data-dictionary.md  # Column descriptions, Sample data, Column relationship, analytics notes
+    ├── Industry Overview.docx 
+    ├── ERD Model.png       # Modeling data tables and defining the relationships  
+    ├── 📊 KPI → Dataset Mapping.docx    # Show how to calculate or apply KPIs on the dataset   
     └── Industry KPIs.docx  # KPI list and definitions
 
 
@@ -44,7 +41,6 @@ sql-gold-layer/
 ### 1. Setup  
 - Create Git repository  
 - Define coding standards  
-- Add `.gitignore` for unnecessary files 
 
 ### 2. Data Preparation  
 - Check data quality (Silver quality)  
@@ -56,25 +52,31 @@ sql-gold-layer/
 - Validate assumptions  
 
 ### 4. Gold Layer Modeling  
-#### ⭐ Fact Constellation Schema (Galaxy Schema)
 
-**Fact Tables**
-- `orders`
-- `order_items`
-- `order_item_refunds`
-- `website_pageviews`
+### ⭐ Sales Snowflake Schema
+- **Fact Table:** `orders`
+- **Dimensions:** `products`, `order_items`, `order_item_refunds` as a Subdimension to `order_items`
 
-**Dimension Tables**
-- `website_sessions`
-- `products`
+### ⭐ Website Snowflake Schema
+- **Fact Table:** `orders`
+- **Dimensions:** `website_sessions`, `website_pageviews` as a Subdimension to `website_sessions`
+
+---
+
+### 🔗 Shared Dimensions
+- **Products** → shared by `orders`, `order_items`, `order_item_refunds`
+- **Date** → shared by all snowflake schemas
+- **User** → shared by `orders` and `website_sessions`
+- **Website Session** → bridges marketing (`website_sessions`) with sales (`orders`)
+
 
 
 ### 5. KPI Calculations  
 - GMV (Gross Merchandise Value)  
-- CAC (Customer Acquisition Cost)  
 - CLV (Customer Lifetime Value)  
 - Conversion Rate  
-- Churn Rate  
+- Churn Rate
+- More KPIs are in the mapping file 
 
 ### 6. Dashboard & Reports  
 - Connect BI tool (Power BI)  
@@ -90,8 +92,7 @@ Extended documentation is in the **docs/** folder:
 - `docs/data-dictionary.md` → Columns, Sample data, Columns relationships, Quality check → [Data Dictionary](docs/data-dictionary.md)
 - `docs/Industry Overview.docx` → E-Commerce industry overview report 
 - `docs/Industry KPIs.docx` → KPI formulas & explanations  
-- `docs/KPI Mapping.xlsx` → Dataset KPIs calculations
-- 
+- `📊 KPI → Dataset Mapping.docx` → Dataset KPIs calculations
 ---
 
 ## ✅ Deliverables  
