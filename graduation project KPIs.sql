@@ -336,4 +336,93 @@ SELECT
   AVG(ARRIVAL_DELAY) AS avg_arrival_delay,
   COUNT(*) AS total_flights
 FROM flights
+
+------------------------------------------------------ Added KPIs -----------------------------------------------------------------------------
+-- Avg delay per flight
+CREATE OR REPLACE VIEW avg_delay_per_flight AS
+SELECT 
+    ROUND(
+        SUM(
+            AIR_SYSTEM_DELAY 
+            + SECURITY_DELAY 
+            + AIRLINE_DELAY 
+            + LATE_AIRCRAFT_DELAY 
+            + WEATHER_DELAY
+        ) 
+        / NULLIF(COUNT(*), 0),
+    2) AS avg_delay_per_flight
+FROM flights;
+
+-- Total Cancellation
+CREATE OR REPLACE VIEW total_cancellation AS
+SELECT 
+    SUM(CANCELLED) AS total_cancellations
+FROM flights;
+
+-- Total Delay
+CREATE OR REPLACE VIEW total_delay AS
+SELECT 
+    COUNT(*) AS delayed_flights
+FROM flights
+WHERE DEPARTURE_DELAY > 0
+   OR ARRIVAL_DELAY > 0;
+   
+-- On time overall
+CREATE OR REPLACE VIEW v_on_time_rate_overall AS
+SELECT 
+    COUNT(*) AS total_flights,
+    SUM(CASE 
+            WHEN ARRIVAL_DELAY <= 0 THEN 1 
+            ELSE 0 
+        END) AS on_time_flights,
+    ROUND(
+        SUM(CASE 
+                WHEN ARRIVAL_DELAY <= 0 THEN 1 
+            END) / NULLIF(COUNT(*), 0),
+        4
+    ) AS on_time_rate_pct
+FROM flights;
+
+-- overall Delay rate
+CREATE OR REPLACE VIEW v_delay_rate_overall AS
+SELECT 
+    COUNT(*) AS total_flights,
+    SUM(CASE 
+            WHEN DEPARTURE_DELAY > 0 
+              OR ARRIVAL_DELAY > 0 
+            THEN 1 
+            ELSE 0 
+        END) AS delayed_flights,
+    ROUND(
+        SUM(CASE 
+                WHEN DEPARTURE_DELAY > 0 
+                  OR ARRIVAL_DELAY > 0 
+                THEN 1 
+            END) / NULLIF(COUNT(*),0),
+        4
+    ) AS delay_rate_pct
+FROM flights;
+
+-- Cancellation rate overall
+CREATE OR REPLACE VIEW v_cancellation_rate_overall AS
+SELECT 
+    AIRLINE,
+    SUM(CANCELLED) AS total_cancellations,
+    COUNT(*) AS total_flights,
+    ROUND(
+        SUM(CANCELLED) / NULLIF(COUNT(*),0), 
+        4
+    ) AS cancellation_rate_pct
+FROM flights
+GROUP BY AIRLINE
+ORDER BY cancellation_rate_pct DESC;
+
+
+-- Number of Airlines
+CREATE OR REPLACE VIEW number_of_airlines AS
+SELECT 
+    COUNT(*) AIRLINE
+FROM
+    airlines
+  
 GROUP BY time_period;
