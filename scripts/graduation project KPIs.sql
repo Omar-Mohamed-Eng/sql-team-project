@@ -21,6 +21,7 @@ SELECT
   SUM(CASE WHEN DEPARTURE_DELAY <= 0 THEN 1 ELSE 0 END) AS on_time_departures,
   ROUND(100 * SUM(CASE WHEN DEPARTURE_DELAY <= 0 THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_on_time_departure
 FROM flights
+WHERE CANCELLED = 0
 GROUP BY AIRLINE;
 -- 3. On-Time Arrival Rate
 
@@ -31,6 +32,7 @@ SELECT
   SUM(CASE WHEN ARRIVAL_DELAY <= 0 THEN 1 ELSE 0 END) AS on_time_arrivals,
   ROUND(100 * SUM(CASE WHEN ARRIVAL_DELAY <= 0 THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_on_time_arrival
 FROM flights
+WHERE CANCELLED = 0
 GROUP BY AIRLINE;
 -- 4. Average Departure Delay
 
@@ -39,7 +41,9 @@ SELECT
   AIRLINE,
   AVG(DEPARTURE_DELAY) AS avg_departure_delay
 FROM flights
+WHERE CANCELLED = 0
 GROUP BY AIRLINE;
+
 -- 5. Average Arrival Delay
 
 CREATE OR REPLACE VIEW v_avg_arrival_delay AS
@@ -47,6 +51,7 @@ SELECT
   AIRLINE,
   AVG(ARRIVAL_DELAY) AS avg_arrival_delay
 FROM flights
+WHERE CANCELLED = 0
 GROUP BY AIRLINE;
 -----------------------------------------------------------
 -- 6. Delay Causes Analysis 
@@ -136,6 +141,7 @@ with cte_top_5 as (
 	  ROUND(AVG(AIR_TIME),2) AS avg_air_time,
 	  row_number() over (order by AVG(AIR_TIME) desc) as rank_top_5
 	FROM flights
+	WHERE CANCELLED = 0
 	GROUP BY AIRLINE
 )
 select AIRLINE, avg_air_time
@@ -229,6 +235,7 @@ SELECT
   ROUND(100 * SUM(CASE WHEN DEPARTURE_DELAY <= 0 THEN 1 ELSE 0 END) / COUNT(*), 2) AS on_time_departure_pct,
   ROUND(100 * SUM(CASE WHEN ARRIVAL_DELAY <= 0 THEN 1 ELSE 0 END) / COUNT(*), 2) AS on_time_arrival_pct
 FROM flights
+WHERE CANCELLED = 0
 GROUP BY AIRLINE;
 -- 22. Airline Cancellation & Diversion Rates (combined)
 
