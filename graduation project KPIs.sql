@@ -359,16 +359,26 @@ SELECT
     SUM(CANCELLED) AS total_cancellations
 FROM flights;
 
--- Total Delay
-CREATE OR REPLACE VIEW total_delay AS
+-- overall Delay rate ---
+CREATE OR REPLACE VIEW overall_Delay_rate AS
 SELECT 
-    COUNT(*) AS delayed_flights
+    COUNT(*) AS total_flights,
+    SUM(CASE 
+            WHEN ARRIVAL_DELAY > 0 
+            THEN 1 
+            ELSE 0 
+        END) AS delayed_flights,
+    ROUND(
+        SUM(CASE 
+                WHEN ARRIVAL_DELAY > 0 
+                THEN 1 
+            END) / NULLIF(COUNT(*),0),
+        4
+    ) AS delay_rate_pct
 FROM flights
-WHERE DEPARTURE_DELAY > 0
-   OR ARRIVAL_DELAY > 0;
-   
--- On time overall
-CREATE OR REPLACE VIEW v_on_time_rate_overall AS
+WHERE CANCELLED = 0;
+-- On time overall ---
+CREATE OR REPLACE VIEW v_on_time_rate_ AS
 SELECT 
     COUNT(*) AS total_flights,
     SUM(CASE 
@@ -381,41 +391,24 @@ SELECT
             END) / NULLIF(COUNT(*), 0),
         4
     ) AS on_time_rate_pct
-FROM flights;
+FROM flights
+WHERE CANCELLED = 0;
 
--- overall Delay rate
-CREATE OR REPLACE VIEW v_delay_rate_overall AS
+-- Total arival Delay ---- 
+CREATE OR REPLACE VIEW v_total_arrival_delay AS
 SELECT 
-    COUNT(*) AS total_flights,
-    SUM(CASE 
-            WHEN DEPARTURE_DELAY > 0 
-              OR ARRIVAL_DELAY > 0 
-            THEN 1 
-            ELSE 0 
-        END) AS delayed_flights,
-    ROUND(
-        SUM(CASE 
-                WHEN DEPARTURE_DELAY > 0 
-                  OR ARRIVAL_DELAY > 0 
-                THEN 1 
-            END) / NULLIF(COUNT(*),0),
-        4
-    ) AS delay_rate_pct
-FROM flights;
+    COUNT(*) AS delayed_flights
+FROM flights
+WHERE ARRIVAL_DELAY > 0
+AND CANCELLED = 0
+AND DIVERTED = 0;
+
 
 -- Cancellation rate overall
 CREATE OR REPLACE VIEW v_cancellation_rate_overall AS
-SELECT 
-    AIRLINE,
-    SUM(CANCELLED) AS total_cancellations,
-    COUNT(*) AS total_flights,
-    ROUND(
-        SUM(CANCELLED) / NULLIF(COUNT(*),0), 
-        4
-    ) AS cancellation_rate_pct
-FROM flights
-GROUP BY AIRLINE
-ORDER BY cancellation_rate_pct DESC;
+SELECT
+    SUM(CANCELLED)/COUNT(*) flight_pct
+    FROM flights;
 
 
 -- Number of Airlines
@@ -424,6 +417,19 @@ SELECT
     COUNT(*) AIRLINE
 FROM
     airlines
+    
+-- . Arrival Delay Distribution (delay brackets counts)
+CREATE OR REPLACE VIEW v_Arrival_delay_distribution AS
+SELECT 
+  AIRLINE,
+  SUM(CASE WHEN ARRIVAL_DELAY <= 0 THEN 1 ELSE 0 END) AS on_time,
+  SUM(CASE WHEN ARRIVAL_DELAY BETWEEN 1 AND 15 THEN 1 ELSE 0 END) AS minor_delay,
+  SUM(CASE WHEN ARRIVAL_DELAY BETWEEN 16 AND 60 THEN 1 ELSE 0 END) AS moderate_delay,
+  SUM(CASE WHEN ARRIVAL_DELAY > 60 THEN 1 ELSE 0 END) AS major_delay
+FROM flights
+WHERE CANCELLED = 0
+GROUP BY AIRLINE;
+
   
 GROUP BY time_period;
 ************************HASSAN****************************
